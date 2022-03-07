@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "github.com/sirkon/deepsequal/internal/testdata;testdata";
+
+package sample;
+
+message Sample {
+    string str = 1;
+    Sub sub = 2;
+}
+
+message Sub {
+    int32 val = 2;
+}

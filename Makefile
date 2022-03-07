@@ -1,12 +1,10 @@
 copy:
-		cp -r /usr/local/go/src/reflect ./internal/
-		cp -r /usr/local/go/src/internal/abi ./internal/
-		cp -r /usr/local/go/src/internal/goarch ./internal/
-		cp -r /usr/local/go/src/internal/goexperiment ./internal/
+		cp -r /usr/local/go/src/internal/reflectlite ./internal/
 		cp -r /usr/local/go/src/internal/unsafeheader ./internal/
-		cp -r /usr/local/go/src/internal/bytealg ./internal/
-		cp -r /usr/local/go/src/internal/itoa ./internal/
-		cp -r /usr/local/go/src/internal/cpu ./internal/
+		cp -r /usr/local/go/src/internal/goarch ./internal/
+		find ./internal/reflectlite -name '*_test.go' -delete
+		find ./internal/unsafeheader -name '*_test.go' -delete
+		find ./internal/goarch -name '*_test.go' -delete
 		go-imports-rename -s --root ./internal 'internal/ => github.com/sirkon/deepequal/internal/'
 
 
