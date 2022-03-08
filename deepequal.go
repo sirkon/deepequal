@@ -160,8 +160,8 @@ func deepEqual(x reflect.Value, y reflect.Value, visited map[visit]bool) bool {
 	case reflect.Complex64, reflect.Complex128:
 		return x.Complex() == y.Complex()
 	default:
-		// Don't want to replicate reflect magic
-		return false
+		// Don't want to replicate reflect magic, just delegate to the ol'good reflect.DeepEqual
+		return reflect.DeepEqual(exportableValue(x).Interface(), exportableValue(y).Interface())
 	}
 }
 
@@ -200,14 +200,14 @@ func getProtoMessage(msg interface{}) (proto.Message, bool) {
 }
 
 // reflectValuePtr takes ptr field value of the given reflect.Value
-// beware, the field name may change in the future
+// WARNING: this is hacky
 func reflectValuePtr(v reflect.Value) unsafe.Pointer {
 	return reflect.ValueOf(v).FieldByName("ptr").UnsafePointer()
 }
 
 // exportableValue returns a value which is a copy of the v minus RO flags
 // what are turned off in the new value.
-// beware, this may change in the future
+// WARNING: this is hacky
 func exportableValue(v reflect.Value) reflect.Value {
 	type valuePlaceholder struct {
 		typ  *struct{}
