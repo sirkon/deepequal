@@ -15,8 +15,8 @@ type EqMatcher struct {
 	v any
 }
 
-// Matcher to satisfy gomock.Matcher
-func (e EqMatcher) Matcher(x any) bool {
+// Matches to satisfy gomock.Matcher
+func (e EqMatcher) Matches(x any) bool {
 	if e.v == nil || x == nil {
 		return Equal(e.v, x)
 	}
