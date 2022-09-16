@@ -29,8 +29,8 @@ func deepEqual(x reflect.Value, y reflect.Value, visited map[visit]bool) bool {
 		return x.IsValid() == y.IsValid()
 	}
 
-	if pbx, ok := getProtoMessage(exportableValue(x).Interface()); ok {
-		if pby, ok := getProtoMessage(exportableValue(y).Interface()); ok {
+	if pbx, ok := getProtoMessage(x.Interface()); ok {
+		if pby, ok := getProtoMessage(y.Interface()); ok {
 			switch {
 			case pbx == nil && pby == nil:
 				return true
@@ -118,7 +118,7 @@ func deepEqual(x reflect.Value, y reflect.Value, visited map[visit]bool) bool {
 		return deepEqual(x.Elem(), y.Elem(), visited)
 	case reflect.Struct:
 		for i, n := 0, x.NumField(); i < n; i++ {
-			if !deepEqual(x.Field(i), y.Field(i), visited) {
+			if !deepEqual(getField(x, i), getField(y, i), visited) {
 				return false
 			}
 		}
@@ -161,7 +161,7 @@ func deepEqual(x reflect.Value, y reflect.Value, visited map[visit]bool) bool {
 		return x.Complex() == y.Complex()
 	default:
 		// Don't want to replicate reflect magic, just delegate to the ol'good reflect.DeepEqual
-		return reflect.DeepEqual(exportableValue(x).Interface(), exportableValue(y).Interface())
+		return reflect.DeepEqual(x.Interface(), y.Interface())
 	}
 }
 
@@ -200,25 +200,7 @@ func getProtoMessage(msg interface{}) (proto.Message, bool) {
 }
 
 // reflectValuePtr takes ptr field value of the given reflect.Value
-// WARNING: this is hacky
+// WARNING: this is hacky and may break in future versions of Go.
 func reflectValuePtr(v reflect.Value) unsafe.Pointer {
 	return reflect.ValueOf(v).FieldByName("ptr").UnsafePointer()
-}
-
-// exportableValue returns a value which is a copy of the v minus RO flags
-// what are turned off in the new value.
-// WARNING: this is hacky
-func exportableValue(v reflect.Value) reflect.Value {
-	type valuePlaceholder struct {
-		typ  *struct{}
-		ptr  unsafe.Pointer
-		flag uintptr
-	}
-
-	value := *(*valuePlaceholder)(unsafe.Pointer(&v))
-	unsetFlag := ^((1 << 5) | (1 << 6))
-	value.flag = uintptr(int(value.flag) & unsetFlag)
-
-	v = *(*reflect.Value)(unsafe.Pointer(&value))
-	return v
 }
