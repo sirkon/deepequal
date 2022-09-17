@@ -91,6 +91,48 @@ func TestPrint(t *testing.T) {
 			},
 		},
 	)
+	printItem(
+		t,
+		map[string]any{
+			"a": "one",
+			"b": 1,
+			"c": true,
+		},
+		&diff.Keys{
+			Right: map[any]diff.Diff{
+				"a": &diff.Missing{},
+			},
+		},
+	)
+}
+
+func TestSunHighlight(t *testing.T) {
+	type testStruct struct {
+		a string
+		b *testdata.Sample
+	}
+
+	printItem(
+		t,
+		&testStruct{
+			a: "abcd",
+			b: &testdata.Sample{
+				Str: "str",
+				Sub: &testdata.Sub{
+					Val: 14,
+				},
+			},
+		},
+		&diff.Fields{
+			Fields: map[string]diff.Diff{
+				"b": &diff.Fields{
+					Fields: map[string]diff.Diff{
+						"Sub": &diff.Value{},
+					},
+				},
+			},
+		},
+	)
 }
 
 func printItem(t *testing.T, v any, d diff.Diff) {
@@ -99,6 +141,6 @@ func printItem(t *testing.T, v any, d diff.Diff) {
 		formatDepth: 0,
 		isLeft:      false,
 	}
-	p.printValue("", reflect.ValueOf(v), d, false)
+	p.printValue("", reflect.ValueOf(v), d, false, false)
 	t.Log("\r", p.buf.String())
 }

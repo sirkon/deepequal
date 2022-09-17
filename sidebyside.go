@@ -27,10 +27,10 @@ func printDiff(p TestPrinter, l, r reflect.Value) {
 	diff := difference(l, r, false)
 
 	lp := newPrinter(true)
-	lp.printValue("", l, diff, false)
+	lp.printValue("", l, diff, false, true)
 
 	rp := newPrinter(false)
-	rp.printValue("", r, diff, false)
+	rp.printValue("", r, diff, false, true)
 
 	ldrs := strings.Split(lp.buf.String(), "\n")
 	rdrs := strings.Split(rp.buf.String(), "\n")
