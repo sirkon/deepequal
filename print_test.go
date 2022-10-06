@@ -141,6 +141,6 @@ func printItem(t *testing.T, v any, d diff.Diff) {
 		formatDepth: 0,
 		isLeft:      false,
 	}
-	p.printValue("", reflect.ValueOf(v), d, false, false)
+	p.printValue("", reflect.ValueOf(v), d, false, false, map[uintptr]struct{}{})
 	t.Log("\r", p.buf.String())
 }

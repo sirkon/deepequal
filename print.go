@@ -30,7 +30,14 @@ func newPrinter(isLeft bool) *printer {
 	}
 }
 
-func (p *printer) printValue(offset string, v reflect.Value, d diff.Diff, isProto bool, showType bool) {
+func (p *printer) printValue(
+	offset string,
+	v reflect.Value,
+	d diff.Diff,
+	isProto bool,
+	showType bool,
+	stack map[uintptr]struct{},
+) {
 	p.setFormatOn(d)
 	defer p.setFormatOff(d)
 	noff := offset + "  "
@@ -91,9 +98,9 @@ func (p *printer) printValue(offset string, v reflect.Value, d diff.Diff, isProt
 			p.buf.WriteString(noff)
 
 			if vdiff := ds[i]; vdiff != nil {
-				p.printValue(noff, vi, vdiff, false, false)
+				p.printValue(noff, vi, vdiff, false, false, stack)
 			} else {
-				p.printValue(noff, vi, nil, false, false)
+				p.printValue(noff, vi, nil, false, false, stack)
 			}
 
 			p.buf.WriteString(",\n\r")
@@ -124,13 +131,13 @@ func (p *printer) printValue(offset string, v reflect.Value, d diff.Diff, isProt
 
 			dm := ds.MapIndex(key)
 			if dm.IsValid() {
-				p.printValue(noff, key, dm.Interface().(diff.Diff), false, false)
+				p.printValue(noff, key, dm.Interface().(diff.Diff), false, false, stack)
 				p.buf.WriteString(": ")
-				p.printValue(noff, v.MapIndex(key), dm.Interface().(diff.Diff), false, false)
+				p.printValue(noff, v.MapIndex(key), dm.Interface().(diff.Diff), false, false, stack)
 			} else {
-				p.printValue(noff, key, nil, false, false)
+				p.printValue(noff, key, nil, false, false, stack)
 				p.buf.WriteString(": ")
-				p.printValue(noff, v.MapIndex(key), nil, false, false)
+				p.printValue(noff, v.MapIndex(key), nil, false, false, stack)
 			}
 
 			p.buf.WriteString(",\n\r")
@@ -162,11 +169,11 @@ func (p *printer) printValue(offset string, v reflect.Value, d diff.Diff, isProt
 				p.buf.WriteString(fieldName)
 				p.setFormatOff(vs)
 				p.buf.WriteString(": ")
-				p.printValue(noff, getField(v, i), vs, false, false)
+				p.printValue(noff, getField(v, i), vs, false, false, stack)
 			} else {
 				p.buf.WriteString(fieldName)
 				p.buf.WriteString(": ")
-				p.printValue(noff, getField(v, i), nil, false, false)
+				p.printValue(noff, getField(v, i), nil, false, false, stack)
 			}
 
 			p.buf.WriteString(",\n\r")
@@ -182,13 +189,30 @@ func (p *printer) printValue(offset string, v reflect.Value, d diff.Diff, isProt
 			return
 		}
 
+		addr := v.Pointer()
+		if _, ok := stack[addr]; ok {
+			p.buf.WriteByte('(')
+			p.buf.WriteString(t.String())
+			p.buf.WriteByte(')')
+			_, _ = fmt.Fprintf(p.buf, "(%x)", addr)
+			return
+		}
+		stack[addr] = struct{}{}
+
 		p.buf.WriteByte('&')
+		// _, _ = fmt.Fprintf(p.buf, "(%x)", addr)
 		_, ip := v.Interface().(proto.Message)
-		p.printValue(offset, v.Elem(), d, ip, false)
+		p.printValue(offset, v.Elem(), d, ip, false, stack)
 
 	case reflect.Interface:
+		if v.IsNil() {
+			p.buf.WriteString(t.String())
+			p.buf.WriteString("(nil)")
+			return
+		}
+
 		var xxx proto.Message
-		p.printValue(offset, v.Elem(), d, t == reflect.TypeOf(xxx), true)
+		p.printValue(offset, v.Elem(), d, t == reflect.TypeOf(xxx), true, stack)
 
 	default:
 		panic(fmt.Errorf("type %s is not supported for printing", t.String()))
