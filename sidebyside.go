@@ -14,11 +14,15 @@ type TestPrinter interface {
 }
 
 // SideBySide outputs a and b side by side with a difference highlight.
-func SideBySide[T any](p TestPrinter, what string, l, r T) {
-	lv := reflect.ValueOf(l)
-	rv := reflect.ValueOf(r)
+func SideBySide[T any](p TestPrinter, what string, want, got T) {
+	lv := reflect.ValueOf(want)
+	rv := reflect.ValueOf(got)
 
-	p.Log("expected and actual values of", what)
+	if !Equal(want, got) {
+		p.Error("mismatched expected and actual values of", what)
+	} else {
+		p.Log(`match for expected and actual values of`, what)
+	}
 	printDiff(p, lv, rv)
 
 }
