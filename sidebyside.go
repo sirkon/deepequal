@@ -2,13 +2,17 @@ package deepequal
 
 import (
 	"bytes"
+	"fmt"
+	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
 // TestPrinter basically a masque for testing.XXX.
 type TestPrinter interface {
+	Helper()
 	Log(a ...any)
 	Error(a ...any)
 }
@@ -18,13 +22,43 @@ func SideBySide[T any](p TestPrinter, what string, want, got T) {
 	lv := reflect.ValueOf(want)
 	rv := reflect.ValueOf(got)
 
+	// Look for *_test.go file in the call stack to show proper line.
+
+	p.Helper()
 	if !Equal(want, got) {
 		p.Error("mismatched expected and actual values of", what)
 	} else {
 		p.Log(`match for expected and actual values of`, what)
 	}
-	printDiff(p, lv, rv)
 
+	printDiff(p, lv, rv)
+}
+
+// linePrefix returns the first call position (<file>:<line>) made in some
+// *_test.go file. The result is either empty or is ended with the space.
+func linePrefix() string {
+	fpcs := make([]uintptr, 128)
+	frames := runtime.CallersFrames(fpcs)
+	n := runtime.Callers(0, fpcs)
+	if n == 0 {
+		return ""
+	}
+	fpcs = fpcs[:n]
+	frames = runtime.CallersFrames(fpcs)
+
+	for {
+		frame, more := frames.Next()
+		if strings.HasSuffix(frame.File, "_test.go") {
+			_, name := filepath.Split(frame.File)
+			return fmt.Sprintf("\r    %s:%d ", name, frame.Line)
+		}
+
+		if !more {
+			break
+		}
+	}
+
+	return ""
 }
 
 func printDiff(p TestPrinter, l, r reflect.Value) {
@@ -47,7 +81,7 @@ func printDiff(p TestPrinter, l, r reflect.Value) {
 
 	lrs := append([]string{formatBold + "Expected\033[0m"}, ldrs...)
 	var strips []string
-	rrs := append([]string{formatBold + "Actual\u001B[0m"}, rdrs...)
+	rrs := append([]string{formatBold + "Actual\033[0m"}, rdrs...)
 
 	max1 := 0
 	for _, lr := range lrs {
