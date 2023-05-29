@@ -89,7 +89,6 @@ func difference(l, r reflect.Value, isProto bool) diff.Diff {
 		return res
 
 	case reflect.Struct:
-
 		res := &diff.Fields{
 			Fields: map[string]diff.Diff{},
 		}

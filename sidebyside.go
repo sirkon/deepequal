@@ -28,7 +28,7 @@ func SideBySide[T any](p TestPrinter, what string, want, got T) {
 	if !Equal(want, got) {
 		p.Error("mismatched expected and actual values of", what)
 	} else {
-		p.Log(`match for expected and actual values of`, what)
+		p.Log(`a match for expected and actual values of`, what)
 	}
 
 	printDiff(p, lv, rv)

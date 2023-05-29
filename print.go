@@ -42,6 +42,9 @@ func (p *printer) printValue(
 	defer p.setFormatOff(d)
 	noff := offset + "  "
 
+	p.setColorOn()
+	defer p.setColorOff()
+
 	t := v.Type()
 	switch t.Kind() {
 	case
@@ -166,12 +169,16 @@ func (p *printer) printValue(
 
 			if vs != nil {
 				p.setFormatOn(vs)
+				p.setColorOn()
 				p.buf.WriteString(fieldName)
-				p.setFormatOff(vs)
-				p.buf.WriteString(": ")
+				p.buf.WriteString("\033[0m: ")
 				p.printValue(noff, getField(v, i), vs, false, false, stack)
+				p.setFormatOff(vs)
+				p.setColorOff()
 			} else {
+				p.setColorOn()
 				p.buf.WriteString(fieldName)
+				p.setColorOff()
 				p.buf.WriteString(": ")
 				p.printValue(noff, getField(v, i), nil, false, false, stack)
 			}
@@ -180,7 +187,9 @@ func (p *printer) printValue(
 		}
 
 		p.buf.WriteString(offset)
+		p.setColorOn()
 		p.buf.WriteString("}")
+		p.setColorOff()
 
 	case reflect.Pointer:
 		if v.IsNil() {
@@ -219,10 +228,31 @@ func (p *printer) printValue(
 	}
 }
 
+func (p *printer) setColorOn() {
+	if p.formatDepth == 0 {
+		return
+	}
+
+	color := formatRed
+	if p.isLeft {
+		color = formatGreen
+	}
+	p.buf.WriteString(color)
+}
+
+func (p *printer) setColorOff() {
+	if p.formatDepth == 0 {
+		return
+	}
+
+	p.buf.WriteString("\033[0n")
+}
+
 func (p *printer) setFormatOn(d diff.Diff) {
 	if d == nil {
 		return
 	}
+
 	switch d.(type) {
 	case *diff.Indices, *diff.Fields, *diff.Keys:
 		return
