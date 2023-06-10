@@ -9,7 +9,11 @@ import (
 )
 
 // Builds a difference between left and right values.
-func difference(l, r reflect.Value, isProto bool) diff.Diff {
+func difference(l, r reflect.Value, isProto bool, stack walkSet) diff.Diff {
+	if !stack.use(l) {
+		return nil
+	}
+
 	if !l.IsValid() {
 		panic(fmt.Errorf("left is %s", l.String()))
 	}
@@ -69,7 +73,7 @@ func difference(l, r reflect.Value, isProto bool) diff.Diff {
 				continue
 			}
 
-			if v := difference(l.MapIndex(key), rv, isProto); v != nil {
+			if v := difference(l.MapIndex(key), rv, isProto, stack); v != nil {
 				res.Left[key.Interface()] = v
 			}
 		}
@@ -81,7 +85,7 @@ func difference(l, r reflect.Value, isProto bool) diff.Diff {
 				continue
 			}
 
-			if v := difference(lv, r.MapIndex(key), isProto); v != nil {
+			if v := difference(lv, r.MapIndex(key), isProto, stack); v != nil {
 				res.Right[key.Interface()] = v
 			}
 		}
@@ -101,7 +105,7 @@ func difference(l, r reflect.Value, isProto bool) diff.Diff {
 			fl := getField(l, i)
 			fr := getField(r, i)
 
-			if v := difference(fl, fr, isProto); v != nil {
+			if v := difference(fl, fr, isProto, stack); v != nil {
 				res.Fields[l.Type().Field(i).Name] = v
 			}
 		}
@@ -113,7 +117,7 @@ func difference(l, r reflect.Value, isProto bool) diff.Diff {
 		}
 
 		_, isProto = l.Interface().(proto.Message)
-		return difference(l.Elem(), r.Elem(), isProto)
+		return difference(l.Elem(), r.Elem(), isProto, stack)
 
 	default:
 		panic(fmt.Errorf("cannot diff values of %T", l.Interface()))
@@ -161,4 +165,15 @@ func findUncommon(src, known reflect.Value) map[int]diff.Diff {
 	}
 
 	return info
+}
+
+type walkSet map[reflect.Value]struct{}
+
+// use adds a new value into the set. Returns false
+// if this value existed before the call and true
+// otherwise.
+func (s walkSet) use(v reflect.Value) bool {
+	_, ok := s[v]
+	s[v] = struct{}{}
+	return !ok
 }

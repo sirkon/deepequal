@@ -342,7 +342,7 @@ func TestDifference(t *testing.T) {
 							t.Error("panic was expected")
 						}()
 					}
-					got := difference(reflect.ValueOf(ttt.a), reflect.ValueOf(ttt.b), false)
+					got := difference(reflect.ValueOf(ttt.a), reflect.ValueOf(ttt.b), false, walkSet{})
 					if !reflect.DeepEqual(got, ttt.want) {
 						t.Error("want\n", spew.Sdump(ttt.want), "\ngot\n", spew.Sdump(got))
 					}

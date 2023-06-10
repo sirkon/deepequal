@@ -62,7 +62,7 @@ func linePrefix() string {
 }
 
 func printDiff(p TestPrinter, l, r reflect.Value) {
-	diff := difference(l, r, false)
+	diff := difference(l, r, false, walkSet{})
 
 	lp := newPrinter(true)
 	lp.printValue("", l, diff, false, true, map[uintptr]struct{}{})
