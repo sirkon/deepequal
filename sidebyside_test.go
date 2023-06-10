@@ -1,6 +1,7 @@
 package deepequal_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sirkon/deepequal"
@@ -8,10 +9,15 @@ import (
 )
 
 func TestSideBySide(t *testing.T) {
-	deepequal.SideBySide(t, "integers", 1, 2)
-	deepequal.SideBySide(t, "slices", []int{1, 2, 3, 4, 5, 6}, []int{3, 6, 7})
+	deepequal.SideBySide(quasiTesting{}, "integers", 1, 2)
 	deepequal.SideBySide(
-		t,
+		quasiTesting{},
+		"slices",
+		[]int{1, 2, 3, 4, 5, 6},
+		[]int{3, 6, 7},
+	)
+	deepequal.SideBySide(
+		quasiTesting{},
 		"maps",
 		map[string]int{
 			"one": 1,
@@ -24,7 +30,7 @@ func TestSideBySide(t *testing.T) {
 		},
 	)
 	deepequal.SideBySide(
-		t,
+		quasiTesting{},
 		"structs",
 		&testdata.Sample{
 			Str: "abcdef",
@@ -39,4 +45,18 @@ func TestSideBySide(t *testing.T) {
 			},
 		},
 	)
+}
+
+type quasiTesting struct{}
+
+func (q quasiTesting) Helper() {
+	return
+}
+
+func (q quasiTesting) Log(a ...any) {
+	fmt.Print(a...)
+}
+
+func (q quasiTesting) Error(a ...any) {
+	fmt.Print(a...)
 }
